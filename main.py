@@ -68,10 +68,10 @@ class Main__:
             outputs = self.model.llama_model.generate(
                 inputs_embeds=embs,
                 attention_mask=attn_mask,
-                max_new_tokens=20,
+                max_new_tokens=50,
                 num_beams=1,
                 length_penalty=1,
-                temperature=0.5,
+                temperature=1,
                 do_sample=True,
                 min_length=1,
                 top_p=0.9,
@@ -352,6 +352,14 @@ class Main__:
                 print("*************************************************************")
                 print(f"Loading best epoch from: {self.best_weight['epoch']}!!!!!!!!!!!")
                 print("*************************************************************")
+            # check QA quality
+            samples = next(iter(dataloader))
+            samples['image'] = samples['image'].cuda()
+            ans = self.chat_module(samples=samples)
+            print("Q: {}".format(samples['instruction_input']))
+            print("A: ",ans)
+
+            
     def trainer(self, dataloader = None, cur_epoch=None):
         train_loss_stack = []
         # 採用minigpt，依照設定每一個epoch的iteration的長度建立train process
@@ -416,13 +424,15 @@ class Main__:
         # ========================================================
         train_data_set = COCOCaptionDataset(vis_root=self.model_config['vis_root_train'], 
                                       ann_paths=self.model_config['ann_paths_train'],
-                                      img_size = self.vit_config['image_size'])
+                                      img_size = self.vit_config['image_size'],
+                                      model_mission=self.model_config['model_mission'])
         train_dataloader =DataLoader(train_data_set, batch_size=self.model_config['batch_size'], num_workers=10, shuffle=True, pin_memory=True)
         
         if self.model_config['vis_root_valid']!=None and self.model_config['ann_paths_valid']!=None:
             valid_data_set = COCOCaptionDataset(vis_root=self.model_config['vis_root_valid'], 
                                                 ann_paths=self.model_config['ann_paths_valid'],
-                                                img_size = self.vit_config['image_size'])
+                                                img_size = self.vit_config['image_size'],
+                                                model_mission=self.model_config['model_mission'])
             valid_dataloader = DataLoader(valid_data_set, batch_size=1, num_workers=10, shuffle=True, pin_memory=True)
         else:
             valid_dataloader = DataLoader(train_data_set, batch_size=1, num_workers=10, shuffle=False, pin_memory=True)

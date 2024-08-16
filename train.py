@@ -6,7 +6,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "true"
 from main import Main__
 
 model_config = {'amp':True, 'use_distributed':False,'accum_grad_iters':1,
-                'batch_size':4,
+                'model_mission':'caption_detection' ,# caption, caption_detection
+                'batch_size':8,
                 'chat_template': True, 
                 'end_sym': [
                     '\n {} </s>',
@@ -18,13 +19,14 @@ model_config = {'amp':True, 'use_distributed':False,'accum_grad_iters':1,
                 ],# list[0] = llama2, list[1] = llama3
                 'max_txt_len': 1024, 'max_context_len': 3500,
                 # 'ouput_dir': './model_FT_weight/llama3_vit_L-clip336', #./llama3_vit_L-clip336, ./llama3_vit_B-clip224-b16
-                'ouput_dir': './model_FT_weight/llama3_tw_vit_L-clip336', #./llama3_vit_L-clip336, ./llama3_vit_B-clip224-b16
+                'ouput_dir': './model_FT_weight/llama3_tw_vit_L-clip336[detection]', #./llama3_vit_L-clip336, ./llama3_vit_B-clip224-b16
                 # 'ouput_dir': './demo', #./llama3_vit_L-clip336, ./llama3_vit_B-clip224-b16
                 'stage_ckpt': '/ssd3/chih/LLM/MiniGPT-4-ckpt/checkpoint_stage3.pth', 
-                'vis_root_train': './dataset/minigpt_casing_train/coco/image/train',
-                'ann_paths_train': ['./dataset/minigpt_casing_train/coco_caption/defe_ready_anno.json'],
-                'vis_root_valid': './dataset/minigpt_casing_test/coco/image/test',
-                'ann_paths_valid': ['./dataset/minigpt_casing_test/coco_caption/defe_ready_anno.json']}
+                'vis_root_train': '/ssd3/chih/Dataset/VISION-Datasets/minigpt_/train/coco/image/train', # './dataset/minigpt_casing_train/coco/image/train'
+                'ann_paths_train': ['/ssd3/chih/Dataset/VISION-Datasets/minigpt_/train/coco_caption/defe_ready_anno.json'], # ['./dataset/minigpt_casing_train/coco_caption/defe_ready_anno.json']
+                'vis_root_valid': '/ssd3/chih/Dataset/VISION-Datasets/minigpt_/test/coco/image/test', # './dataset/minigpt_casing_test/coco/image/test'
+                'ann_paths_valid': ['/ssd3/chih/Dataset/VISION-Datasets/minigpt_/test/coco_caption/defe_ready_anno.json'] # ['./dataset/minigpt_casing_test/coco_caption/defe_ready_anno.json']
+                }
 
 # llm_config = {'llama_model':'/ssd3/chih/LLM/Llama-2-7b-chat-hf', 'low_resource':True, 'low_res_device':0, 
 #               'lora_r':64, 'lora_target_modules':["q_proj", "v_proj"], 'lora_alpha':16,'lora_dropout':0.05
@@ -47,7 +49,7 @@ vit_config = {'model_name':'clip_large_336', #eva_clip_g, clip_large_336
               'drop_path_rate': 0, 'use_grad_checkpoint': True, 'vit_precision': 'fp16', 'freeze_vit': True, }
 
 lr_config = {'init_lr': 1e-5, 'beta2':0.999,'min_lr': 1e-6, 'decay_rate': None, 'weight_decay':0.05,
-                'warmup_start_lr': 1e-6, 'warmup_steps': 1000, 'iters_per_epoch': 1000}
+                'warmup_start_lr': 1e-6, 'warmup_steps': 1000, 'iters_per_epoch': 200}
 
 
 def signal_handler(signal, frame):

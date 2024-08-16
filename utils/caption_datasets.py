@@ -118,11 +118,12 @@ class __DisplMixin:
         )
 
 class COCOCaptionDataset(BaseDataset, __DisplMixin):
-    def __init__(self, vis_root = None, ann_paths = None, img_size = 224):
+    def __init__(self, vis_root = None, ann_paths = None, img_size = 224, model_mission = 'caption'):
         """
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
+        self.model_mission = model_mission
         self.img_size = img_size
         vis_processor = Blip2ImageTrainProcessor(image_size=self.img_size)
         text_processor = BlipCaptionProcessor()
@@ -148,29 +149,53 @@ class COCOCaptionDataset(BaseDataset, __DisplMixin):
             if img_id not in self.img_ids.keys():
                 self.img_ids[img_id] = n
                 n += 1
-
-        self.instruction_pool = [
-            "Does this photo have any flaws?", #<=new
-            "Please answer Flawed or Flawless.", #<=new
-            "Please answer Defective product or Flawless product." #<=new
-        ]
+        if self.model_mission == 'caption':
+            self.instruction_pool = [
+                "Does this photo have any flaws?", #<=new
+                "Please answer Flawed or Flawless.", #<=new
+                "Please answer Defective product or Flawless product." #<=new
+            ]
+        else:
+            self.instruction_pool = ["請大概描述一下哪一邊有瑕疵？",
+                                     "請描述一下這一張照片是什麼產品，以及哪個地方有瑕疵。",
+                                     "請指出這是什麼產品以及哪邊有瑕疵。",
+                                     "請描述一下這一張圖片。"]
+        print("[Total]: ",len(self.annotation))
     def __getitem__(self, index):
 
         # TODO this assumes image input, not general enough
         ann = self.annotation[index]
+        # print(ann)
         img_file = ann["image"].split("/")[-1]
         image_path = os.path.join(self.vis_root, img_file)
         image = Image.open(image_path).convert("RGB")
         image = self.vis_processor(image)
-        caption = self.text_processor(ann["caption"])
-        instruction = random.choice(self.instruction_pool)
+        instruction = ''
         # instruction = custom_des
-        if True: #task type = [caption, ....]
+        # if True: #task type = [caption, ....]
+        if self.model_mission == 'caption':
+            caption = self.text_processor(ann["caption"])
+            instruction = random.choice(self.instruction_pool)
             instruction = "<Img><ImageHere></Img> [caption] {} ".format(instruction)
+        elif self.model_mission == 'caption_detection':
+            caption = self.text_processor(ann["caption"])
+            instruction = random.choice(self.instruction_pool)
+            
+            instruction = "<Img><ImageHere></Img> [detection] {} ".format(instruction)
+            # print(instruction)
+            # coco ann => [x,y,width,height]
+            # < Xleft >< Ytop >< Xright >< Ybottom >
+            # caption = "Product: {} - <{}><{}><{}><{}>".format(img_file.split('_')[0], ann["caption"][0],ann["caption"][1],ann["caption"][2],ann["caption"][3])
+        
+        # print(instruction)
+        # print(caption)
+        # print(ddd)
         return {
             "image": image,
             "answer": caption,
             "instruction_input": instruction,
+            'image_path': image_path,
+            'bbox': ann['bbox']
         }
 
 class CaptionEvalDataset(BaseDataset, __DisplMixin):
